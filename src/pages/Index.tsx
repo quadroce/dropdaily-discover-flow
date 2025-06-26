@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,20 +5,59 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, ArrowRight, Smartphone, Brain, Zap, Star, Menu, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [email, setEmail] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const handleWaitlistSignup = (e: React.FormEvent) => {
+  const handleWaitlistSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
+    
+    if (!email) {
       toast({
-        title: "Welcome to DropDaily! 🎉",
-        description: "You're on the waitlist. We'll notify you when we launch!",
+        title: "Email required",
+        description: "Please enter your email address to join the waitlist.",
+        variant: "destructive",
       });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const { error } = await supabase
+        .from('waitlist')
+        .insert([{ email }]);
+
+      if (error) {
+        if (error.code === '23505') { // Unique constraint violation
+          toast({
+            title: "Already on the waitlist! 👋",
+            description: "This email is already registered. We'll keep you updated!",
+          });
+        } else {
+          throw error;
+        }
+      } else {
+        toast({
+          title: "Welcome to DropDaily! 🎉",
+          description: "You're on the waitlist. We'll notify you when we launch!",
+        });
+      }
+      
       setEmail("");
+    } catch (error) {
+      console.error('Waitlist signup error:', error);
+      toast({
+        title: "Something went wrong",
+        description: "Please try again later or contact support if the issue persists.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -42,7 +80,12 @@ const Index = () => {
               <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
               <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
               <a href="#faq" className="text-gray-600 hover:text-gray-900 transition-colors">FAQ</a>
-              <Button className="bg-blue-500 hover:bg-blue-600 text-white">Join Waitlist</Button>
+              <Button 
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+                onClick={() => document.getElementById('waitlist-form')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                Join Waitlist
+              </Button>
             </div>
 
             {/* Mobile menu button */}
@@ -62,7 +105,15 @@ const Index = () => {
                 <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
                 <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
                 <a href="#faq" className="text-gray-600 hover:text-gray-900 transition-colors">FAQ</a>
-                <Button className="bg-blue-500 hover:bg-blue-600 text-white w-full">Join Waitlist</Button>
+                <Button 
+                  className="bg-blue-500 hover:bg-blue-600 text-white w-full"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    document.getElementById('waitlist-form')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  Join Waitlist
+                </Button>
               </div>
             </div>
           )}
@@ -86,7 +137,7 @@ const Index = () => {
               </p>
               
               {/* Waitlist Form */}
-              <form onSubmit={handleWaitlistSignup} className="flex flex-col sm:flex-row gap-4 max-w-md animate-fade-in">
+              <form onSubmit={handleWaitlistSignup} className="flex flex-col sm:flex-row gap-4 max-w-md animate-fade-in" id="waitlist-form">
                 <Input
                   type="email"
                   placeholder="Enter your email"
@@ -94,9 +145,14 @@ const Index = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="flex-1"
                   required
+                  disabled={isSubmitting}
                 />
-                <Button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white px-8">
-                  Join Waitlist <ArrowRight className="ml-2 h-4 w-4" />
+                <Button 
+                  type="submit" 
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-8"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Joining..." : "Join Waitlist"} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </form>
               
@@ -403,9 +459,14 @@ const Index = () => {
               onChange={(e) => setEmail(e.target.value)}
               className="flex-1 bg-white text-gray-900"
               required
+              disabled={isSubmitting}
             />
-            <Button type="submit" className="bg-white text-blue-500 hover:bg-gray-100 px-8">
-              Get Early Access
+            <Button 
+              type="submit" 
+              className="bg-white text-blue-500 hover:bg-gray-100 px-8"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Joining..." : "Get Early Access"}
             </Button>
           </form>
           
