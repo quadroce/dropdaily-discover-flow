@@ -238,7 +238,41 @@ const Index = () => {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { type: "Article", title: "The Future of AI in Creative Industries", source: "TechCrunch", time: "5 min read" },
+              { 
+                type: "Discussion", 
+                title: "What can I expect moving to Milan as a guy in my mid-20s?", 
+                source: "Reddit - r/milano", 
+                time: "8 min read",
+                url: "https://www.reddit.com/r/milano/comments/1llpits/what_can_i_expect_moving_to_milan_as_a_guy_in_my/"
+              },
+              { 
+                type: "Article", 
+                title: "Cambiare settore? No grazie", 
+                source: "LinkedIn News", 
+                time: "5 min read",
+                url: "https://www.linkedin.com/news/story/cambiare-settore-no-grazie-6448388/"
+              },
+              { 
+                type: "Social", 
+                title: "Instagram Post", 
+                source: "Instagram", 
+                time: "1 min view",
+                url: "https://www.instagram.com/p/DIJpxL9oRE3/?img_index=1"
+              },
+              { 
+                type: "News", 
+                title: "Wimbledon: sorteggio Sinner debutta contro Nardi, nei quarti possibile derby con Musetti", 
+                source: "Gazzetta dello Sport", 
+                time: "4 min read",
+                url: "https://www.gazzetta.it/Tennis/atp/slam/wimbledon/27-06-2025/wimbledon-sorteggio-sinner-debutta-contro-nardi-nei-quarti-possibile-derby-con-musetti.shtml"
+              },
+              { 
+                type: "Tech", 
+                title: "This AI-powered startup studio plans to launch 100,000 companies a year. Really.", 
+                source: "TechCrunch", 
+                time: "6 min read",
+                url: "https://techcrunch.com/2025/06/26/this-ai-powered-startup-studio-plans-to-launch-100000-companies-a-year-really/"
+              },
               { 
                 type: "Video", 
                 title: "Dan Pat Rugby Training", 
@@ -246,14 +280,17 @@ const Index = () => {
                 time: "12 min",
                 isVideo: true,
                 videoId: "UYKV0LXfj8k"
-              },
-              { type: "Thread", title: "10 productivity hacks that actually work", source: "Twitter", time: "2 min read" },
-              { type: "Discussion", title: "What's the best investment advice you received?", source: "Reddit", time: "8 min read" },
-              { type: "Article", title: "Minimalist Design Principles for 2024", source: "Design Milk", time: "7 min read" },
-              { type: "Video", title: "Quick Mediterranean Recipes", source: "Instagram", time: "3 min" }
+              }
             ].map((item, index) => (
               <Card key={index} className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
-                <Badge className="mb-3 bg-blue-100 text-blue-800">{item.type}</Badge>
+                <Badge className={`mb-3 ${
+                  item.type === 'Discussion' ? 'bg-orange-100 text-orange-800' :
+                  item.type === 'Article' ? 'bg-blue-100 text-blue-800' :
+                  item.type === 'Social' ? 'bg-pink-100 text-pink-800' :
+                  item.type === 'News' ? 'bg-green-100 text-green-800' :
+                  item.type === 'Tech' ? 'bg-purple-100 text-purple-800' :
+                  'bg-blue-100 text-blue-800'
+                }`}>{item.type}</Badge>
                 <h3 className="font-semibold mb-2 line-clamp-2">{item.title}</h3>
                 {item.isVideo && item.videoId ? (
                   <div className="my-4">
