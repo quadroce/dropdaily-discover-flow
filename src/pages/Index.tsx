@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, ArrowRight, Smartphone, Brain, Zap, Star, Menu, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import YouTubeEmbed from "@/components/YouTubeEmbed";
 
 const Index = () => {
   const [email, setEmail] = useState("");
@@ -237,7 +239,14 @@ const Index = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               { type: "Article", title: "The Future of AI in Creative Industries", source: "TechCrunch", time: "5 min read" },
-              { type: "Video", title: "Morning Routine of Successful Entrepreneurs", source: "YouTube", time: "12 min" },
+              { 
+                type: "Video", 
+                title: "Dan Pat Rugby Training", 
+                source: "YouTube", 
+                time: "12 min",
+                isVideo: true,
+                videoId: "UYKV0LXfj8k"
+              },
               { type: "Thread", title: "10 productivity hacks that actually work", source: "Twitter", time: "2 min read" },
               { type: "Discussion", title: "What's the best investment advice you received?", source: "Reddit", time: "8 min read" },
               { type: "Article", title: "Minimalist Design Principles for 2024", source: "Design Milk", time: "7 min read" },
@@ -246,6 +255,14 @@ const Index = () => {
               <Card key={index} className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
                 <Badge className="mb-3 bg-blue-100 text-blue-800">{item.type}</Badge>
                 <h3 className="font-semibold mb-2 line-clamp-2">{item.title}</h3>
+                {item.isVideo && item.videoId ? (
+                  <div className="my-4">
+                    <YouTubeEmbed 
+                      videoId={item.videoId} 
+                      title={item.title}
+                    />
+                  </div>
+                ) : null}
                 <div className="flex justify-between items-center text-sm text-gray-500">
                   <span>{item.source}</span>
                   <span>{item.time}</span>
