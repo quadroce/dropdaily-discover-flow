@@ -9,6 +9,84 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      content: {
+        Row: {
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at: string
+          description: string | null
+          embedding: string | null
+          id: string
+          published_at: string | null
+          source: string | null
+          title: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at?: string
+          description?: string | null
+          embedding?: string | null
+          id?: string
+          published_at?: string | null
+          source?: string | null
+          title: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          content_type?: Database["public"]["Enums"]["content_type"]
+          created_at?: string
+          description?: string | null
+          embedding?: string | null
+          id?: string
+          published_at?: string | null
+          source?: string | null
+          title?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      content_topics: {
+        Row: {
+          content_id: string
+          created_at: string
+          id: string
+          relevance_score: number | null
+          topic_id: string
+        }
+        Insert: {
+          content_id: string
+          created_at?: string
+          id?: string
+          relevance_score?: number | null
+          topic_id: string
+        }
+        Update: {
+          content_id?: string
+          created_at?: string
+          id?: string
+          relevance_score?: number | null
+          topic_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_topics_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_topics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -39,6 +117,98 @@ export type Database = {
         }
         Relationships: []
       }
+      topics: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          embedding: string | null
+          id: string
+          name: string
+          parent_category: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          embedding?: string | null
+          id?: string
+          name: string
+          parent_category?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          embedding?: string | null
+          id?: string
+          name?: string
+          parent_category?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          topic_id: string
+          updated_at: string
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          topic_id: string
+          updated_at?: string
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          topic_id?: string
+          updated_at?: string
+          user_id?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_preferences_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profile_vectors: {
+        Row: {
+          last_updated: string
+          profile_embedding: string | null
+          topics_count: number | null
+          user_id: string
+        }
+        Insert: {
+          last_updated?: string
+          profile_embedding?: string | null
+          topics_count?: number | null
+          user_id: string
+        }
+        Update: {
+          last_updated?: string
+          profile_embedding?: string | null
+          topics_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       waitlist: {
         Row: {
           created_at: string
@@ -62,10 +232,106 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      binary_quantize: {
+        Args: { "": string } | { "": unknown }
+        Returns: unknown
+      }
+      halfvec_avg: {
+        Args: { "": number[] }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
+      hnsw_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      l2_norm: {
+        Args: { "": unknown } | { "": unknown }
+        Returns: number
+      }
+      l2_normalize: {
+        Args: { "": string } | { "": unknown } | { "": unknown }
+        Returns: unknown
+      }
+      sparsevec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
+      vector_avg: {
+        Args: { "": number[] }
+        Returns: string
+      }
+      vector_dims: {
+        Args: { "": string } | { "": unknown }
+        Returns: number
+      }
+      vector_norm: {
+        Args: { "": string }
+        Returns: number
+      }
+      vector_out: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: { "": string }
+        Returns: string
+      }
+      vector_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
     }
     Enums: {
-      [_ in never]: never
+      content_type:
+        | "article"
+        | "video"
+        | "reddit_thread"
+        | "discussion"
+        | "news"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -180,6 +446,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      content_type: ["article", "video", "reddit_thread", "discussion", "news"],
+    },
   },
 } as const
