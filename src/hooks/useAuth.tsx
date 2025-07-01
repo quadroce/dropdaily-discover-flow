@@ -1,8 +1,8 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -30,6 +30,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const checkAndRedirectToPreferences = async (userId: string) => {
+    try {
+      // Controllo se l'utente ha preferenze configurate
+      const { data: preferences, error } = await supabase
+        .from('user_preferences')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1);
+
+      if (error) {
+        console.error('Errore nel controllo delle preferenze:', error);
+        return;
+      }
+
+      // Se non ha preferenze, reindirizza alla pagina preferences
+      if (!preferences || preferences.length === 0) {
+        console.log('Primo login rilevato, reindirizzamento alle preferenze...');
+        navigate('/preferences');
+      }
+    } catch (error) {
+      console.error('Errore durante il controllo del primo login:', error);
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener
@@ -39,6 +64,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Reindirizza alle preferenze al primo login
+        if (event === 'SIGNED_IN' && session?.user) {
+          setTimeout(() => {
+            checkAndRedirectToPreferences(session.user.id);
+          }, 100);
+        }
       }
     );
 
@@ -50,7 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
     const redirectUrl = `${window.location.origin}/`;
