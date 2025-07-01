@@ -3,13 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Search, Filter, Heart, Save, RotateCcw } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Heart } from 'lucide-react';
+import TopicSearchFilters from './TopicSearchFilters';
+import TopicCategorySection from './TopicCategorySection';
+import TopicSelectionActions from './TopicSelectionActions';
+import TopicEmptyState from './TopicEmptyState';
 
 interface Topic {
   id: string;
@@ -206,116 +206,35 @@ const TopicSelector = () => {
           </p>
         </CardHeader>
         <CardContent>
-          {/* Search and Filter Controls */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Cerca argomenti..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 border border-input rounded-md bg-background text-sm"
-              >
-                <option value="all">Tutte le categorie</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category.replace('_', ' ')}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+          <TopicSearchFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            categories={categories}
+          />
 
-          {/* Topics by Category */}
           <div className="space-y-6">
             {Object.entries(topicsByCategory).map(([category, categoryTopics]) => (
-              <div key={category} className="space-y-3">
-                <h3 className="font-semibold text-lg capitalize flex items-center gap-2">
-                  {category.replace('_', ' ')}
-                  <Badge variant="secondary" className="text-xs">
-                    {categoryTopics.length}
-                  </Badge>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {categoryTopics.map((topic) => (
-                    <div
-                      key={topic.id}
-                      className={`flex items-start space-x-3 p-4 rounded-lg border transition-all duration-200 cursor-pointer hover:shadow-md ${
-                        selectedTopics.has(topic.id) 
-                          ? 'bg-primary/5 border-primary shadow-sm' 
-                          : 'hover:bg-gray-50 border-gray-200'
-                      }`}
-                      onClick={() => handleTopicToggle(topic.id)}
-                    >
-                      <Checkbox
-                        id={topic.id}
-                        checked={selectedTopics.has(topic.id)}
-                        onCheckedChange={() => handleTopicToggle(topic.id)}
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium text-sm leading-tight">{topic.name}</div>
-                        {topic.description && (
-                          <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {topic.description}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <TopicCategorySection
+                key={category}
+                category={category}
+                topics={categoryTopics}
+                selectedTopics={selectedTopics}
+                onTopicToggle={handleTopicToggle}
+              />
             ))}
           </div>
 
-          {Object.keys(topicsByCategory).length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>Nessun argomento trovato per i criteri di ricerca.</p>
-            </div>
-          )}
+          {Object.keys(topicsByCategory).length === 0 && <TopicEmptyState />}
           
-          {/* Action Buttons */}
-          <div className="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4 pt-6 border-t">
-            <div className="flex items-center gap-4">
-              <Badge variant="outline" className="flex items-center gap-2">
-                <Heart className="h-3 w-3 text-red-500" />
-                {selectedTopics.size} argomenti selezionati
-              </Badge>
-              {hasChanges && (
-                <Badge variant="secondary" className="text-xs">
-                  Modifiche non salvate
-                </Badge>
-              )}
-            </div>
-            <div className="flex gap-2">
-              {hasChanges && (
-                <Button 
-                  variant="outline"
-                  onClick={handleResetPreferences}
-                  className="flex items-center gap-2"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  Annulla
-                </Button>
-              )}
-              <Button 
-                onClick={handleSavePreferences}
-                disabled={updatePreferencesMutation.isPending || !hasChanges}
-                className="flex items-center gap-2"
-              >
-                <Save className="h-4 w-4" />
-                {updatePreferencesMutation.isPending ? 'Salvataggio...' : 'Salva Preferenze'}
-              </Button>
-            </div>
-          </div>
+          <TopicSelectionActions
+            selectedCount={selectedTopics.size}
+            hasChanges={hasChanges}
+            onSave={handleSavePreferences}
+            onReset={handleResetPreferences}
+            isSaving={updatePreferencesMutation.isPending}
+          />
         </CardContent>
       </Card>
     </div>
