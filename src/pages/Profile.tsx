@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, User, ArrowLeft } from 'lucide-react';
+import { Loader2, User, ArrowLeft, Settings, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Profile = () => {
@@ -141,6 +141,28 @@ const Profile = () => {
                 )}
               </Button>
             </form>
+
+            {/* Preferences Section */}
+            <div className="border-t pt-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                    <Heart className="h-4 w-4 text-red-500" />
+                    I Tuoi Interessi
+                  </h3>
+                  <p className="text-sm text-gray-500">Gestisci gli argomenti che ti interessano</p>
+                </div>
+                <Link to="/preferences">
+                  <Button 
+                    variant="outline" 
+                    className="w-full flex items-center gap-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Modifica Preferenze
+                  </Button>
+                </Link>
+              </div>
+            </div>
 
             <div className="border-t pt-6">
               <div className="flex items-center justify-between">
