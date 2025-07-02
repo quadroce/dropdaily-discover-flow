@@ -34,6 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     // Test 2: Check if users have preferences
+    let totalPreferences = 0;
     if (users && users.length > 0) {
       for (const user of users) {
         const { data: preferences, error: prefsError } = await supabaseClient
@@ -46,6 +47,7 @@ const handler = async (req: Request): Promise<Response> => {
           .eq('user_id', user.id);
 
         console.log(`User ${user.email} preferences:`, preferences?.length || 0);
+        totalPreferences += preferences?.length || 0;
         if (prefsError) {
           console.error(`Preferences error for ${user.email}:`, prefsError);
         }
@@ -56,11 +58,11 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: recentContent, error: contentError } = await supabaseClient
       .from('content')
       .select('id, title, published_at, source')
-      .gte('published_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+      .gte('published_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Last 7 days
       .order('published_at', { ascending: false })
       .limit(10);
 
-    console.log('Recent content found:', recentContent?.length || 0);
+    console.log('Recent content found (last 7 days):', recentContent?.length || 0);
     if (contentError) {
       console.error('Content error:', contentError);
     }
@@ -76,7 +78,7 @@ const handler = async (req: Request): Promise<Response> => {
         topic:topics(name),
         relevance_score
       `)
-      .gte('content.published_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+      .gte('content.published_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
       .limit(10);
 
     console.log('Content-topics mappings found:', contentTopics?.length || 0);
@@ -91,32 +93,52 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('RESEND_API_KEY exists:', !!resendKey);
     console.log('FIRECRAWL_API_KEY exists:', !!firecrawlKey);
 
-    // Test 6: Try calling collect-content function
-    console.log('Testing collect-content function...');
-    try {
-      const { data: collectData, error: collectError } = await supabaseClient.functions.invoke('collect-content');
-      console.log('Collect-content response:', collectData);
-      if (collectError) {
-        console.error('Collect-content error:', collectError);
-      }
-    } catch (error) {
-      console.error('Failed to call collect-content:', error);
+    // Test 6: Check topics database
+    const { data: topics, error: topicsError } = await supabaseClient
+      .from('topics')
+      .select('id, name, category')
+      .limit(5);
+
+    console.log('Topics in database:', topics?.length || 0);
+    if (topicsError) {
+      console.error('Topics error:', topicsError);
     }
 
     const logData = {
       timestamp: new Date().toISOString(),
       users_count: users?.length || 0,
+      total_preferences: totalPreferences,
       content_count: recentContent?.length || 0,
       content_topics_count: contentTopics?.length || 0,
+      topics_count: topics?.length || 0,
       api_keys: {
         resend: !!resendKey,
         firecrawl: !!firecrawlKey
       },
       users: users?.map(u => ({ email: u.email, id: u.id })) || [],
-      recent_content: recentContent?.map(c => ({ title: c.title, published_at: c.published_at })) || []
+      recent_content: recentContent?.map(c => ({ title: c.title, published_at: c.published_at })) || [],
+      recommendations: []
     };
 
+    // Add recommendations based on findings
+    if (logData.users_count === 0) {
+      logData.recommendations.push("No users found - make sure users are registered and have profiles");
+    }
+    if (logData.total_preferences === 0) {
+      logData.recommendations.push("No user preferences found - users need to configure their interests");
+    }
+    if (logData.content_count === 0) {
+      logData.recommendations.push("No recent content found - run content collection to populate database");
+    }
+    if (logData.topics_count === 0) {
+      logData.recommendations.push("No topics found - run topic seeder to populate topics database");
+    }
+    if (!logData.api_keys.resend) {
+      logData.recommendations.push("RESEND_API_KEY not configured - email sending will fail");
+    }
+
     console.log('=== TEST COMPLETED ===');
+    console.log('Recommendations:', logData.recommendations);
 
     return new Response(
       JSON.stringify({

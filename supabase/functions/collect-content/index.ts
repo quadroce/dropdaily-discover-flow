@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
-import FirecrawlApp from 'https://esm.sh/@mendable/firecrawl-js@1.0.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,14 +10,75 @@ interface ContentSource {
   url: string;
   type: 'rss' | 'website' | 'blog';
   category: string;
+  topics: string[];
 }
 
-const defaultSources: ContentSource[] = [
-  { url: 'https://techcrunch.com', type: 'website', category: 'tecnologia' },
-  { url: 'https://www.wired.com', type: 'website', category: 'tecnologia' },
-  { url: 'https://medium.com', type: 'website', category: 'general' },
-  { url: 'https://dev.to', type: 'website', category: 'programmazione' },
-  { url: 'https://news.ycombinator.com', type: 'website', category: 'tecnologia' },
+// Sample content to populate the database for testing
+const sampleContent = [
+  {
+    title: "What can I expect moving to Milan as a guy in my mid-20s?",
+    url: "https://www.reddit.com/r/milano/comments/1llpits/what_can_i_expect_moving_to_milan_as_a_guy_in_my/",
+    description: "Discussion about moving to Milan for young professionals",
+    source: "Reddit - r/milano",
+    content_type: "reddit_thread",
+    topics: ["Culture & Society", "World & Politics"]
+  },
+  {
+    title: "Cambiare settore? No grazie",
+    url: "https://www.linkedin.com/news/story/cambiare-settore-no-grazie-6448388/",
+    description: "Analysis of career changes in the current job market",
+    source: "LinkedIn News",
+    content_type: "article",
+    topics: ["Finance & Economy", "Education & Learning"]
+  },
+  {
+    title: "This AI-powered startup studio plans to launch 100,000 companies a year. Really.",
+    url: "https://techcrunch.com/2025/06/26/this-ai-powered-startup-studio-plans-to-launch-100000-companies-a-year-really/",
+    description: "TechCrunch article about AI-powered startup acceleration",
+    source: "TechCrunch",
+    content_type: "article",
+    topics: ["Tech & Innovation", "Finance & Economy"]
+  },
+  {
+    title: "Wimbledon: sorteggio Sinner debutta contro Nardi",
+    url: "https://www.gazzetta.it/Tennis/atp/slam/wimbledon/27-06-2025/wimbledon-sorteggio-sinner-debutta-contro-nardi-nei-quarti-possibile-derby-con-musetti.shtml",
+    description: "Wimbledon tennis tournament draw and match predictions",
+    source: "Gazzetta dello Sport",
+    content_type: "news",
+    topics: ["Sports"]
+  },
+  {
+    title: "Dan Pat Rugby Training",
+    url: "https://www.youtube.com/watch?v=UYKV0LXfj8k",
+    description: "Rugby training techniques and drills",
+    source: "YouTube",
+    content_type: "video",
+    topics: ["Sports", "Wellness & Lifestyle"]
+  },
+  {
+    title: "The Future of AI in Healthcare",
+    url: "https://example.com/ai-healthcare",
+    description: "How artificial intelligence is revolutionizing medical diagnosis and treatment",
+    source: "Tech Health Magazine",
+    content_type: "article",
+    topics: ["Tech & Innovation", "Science & Nature"]
+  },
+  {
+    title: "Sustainable Living: 10 Easy Changes You Can Make Today",
+    url: "https://example.com/sustainable-living",
+    description: "Practical tips for reducing your environmental footprint",
+    source: "Green Living Blog",
+    content_type: "article",
+    topics: ["Science & Nature", "Wellness & Lifestyle"]
+  },
+  {
+    title: "Market Analysis: Tech Stocks in 2025",
+    url: "https://example.com/tech-stocks-2025",
+    description: "Investment insights and predictions for technology sector",
+    source: "Financial Times",
+    content_type: "article",
+    topics: ["Finance & Economy", "Tech & Innovation"]
+  }
 ];
 
 const handler = async (req: Request): Promise<Response> => {
@@ -32,85 +92,87 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const firecrawl = new FirecrawlApp({
-      apiKey: Deno.env.get('FIRECRAWL_API_KEY')
-    });
-
     console.log('Starting content collection...');
     
-    for (const source of defaultSources) {
+    let contentAdded = 0;
+    let contentSkipped = 0;
+
+    for (const contentItem of sampleContent) {
       try {
-        console.log(`Crawling ${source.url}...`);
-        
-        const crawlResponse = await firecrawl.crawlUrl(source.url, {
-          limit: 10,
-          scrapeOptions: {
-            formats: ['markdown'],
-            onlyMainContent: true,
-          }
-        });
+        // Check if content already exists
+        const { data: existingContent } = await supabaseClient
+          .from('content')
+          .select('id')
+          .eq('url', contentItem.url)
+          .single();
 
-        if (crawlResponse.success && crawlResponse.data) {
-          for (const page of crawlResponse.data) {
-            if (page.markdown && page.metadata?.title) {
-              // Check if content already exists
-              const { data: existingContent } = await supabaseClient
-                .from('content')
-                .select('id')
-                .eq('url', page.metadata.sourceURL)
-                .single();
+        if (existingContent) {
+          console.log(`Content already exists: ${contentItem.title}`);
+          contentSkipped++;
+          continue;
+        }
 
-              if (!existingContent) {
-                // Insert new content
-                const { data: contentData, error: contentError } = await supabaseClient
-                  .from('content')
-                  .insert({
-                    title: page.metadata.title,
-                    description: page.metadata.description || page.markdown.substring(0, 200),
-                    url: page.metadata.sourceURL,
-                    source: source.url,
-                    content_type: 'article',
-                    published_at: new Date().toISOString()
-                  })
-                  .select()
-                  .single();
+        // Insert new content
+        const { data: newContent, error: contentError } = await supabaseClient
+          .from('content')
+          .insert({
+            title: contentItem.title,
+            description: contentItem.description,
+            url: contentItem.url,
+            source: contentItem.source,
+            content_type: contentItem.content_type as any,
+            published_at: new Date().toISOString()
+          })
+          .select()
+          .single();
 
-                if (contentError) {
-                  console.error('Error inserting content:', contentError);
-                  continue;
-                }
+        if (contentError) {
+          console.error('Error inserting content:', contentError);
+          continue;
+        }
 
-                // Find matching topic
-                const { data: topics } = await supabaseClient
-                  .from('topics')
-                  .select('id')
-                  .eq('category', source.category)
-                  .limit(1);
+        console.log(`Added content: ${contentItem.title}`);
+        contentAdded++;
 
-                if (topics && topics.length > 0) {
-                  // Link content to topic
-                  await supabaseClient
-                    .from('content_topics')
-                    .insert({
-                      content_id: contentData.id,
-                      topic_id: topics[0].id,
-                      relevance_score: 1.0
-                    });
-                }
+        // Link content to topics
+        for (const topicCategory of contentItem.topics) {
+          const { data: topics } = await supabaseClient
+            .from('topics')
+            .select('id')
+            .eq('category', topicCategory)
+            .limit(1);
 
-                console.log(`Added content: ${page.metadata.title}`);
-              }
+          if (topics && topics.length > 0) {
+            const { error: linkError } = await supabaseClient
+              .from('content_topics')
+              .insert({
+                content_id: newContent.id,
+                topic_id: topics[0].id,
+                relevance_score: 1.0
+              });
+
+            if (linkError) {
+              console.error('Error linking content to topic:', linkError);
+            } else {
+              console.log(`Linked content to topic: ${topicCategory}`);
             }
           }
         }
+
       } catch (error) {
-        console.error(`Error crawling ${source.url}:`, error);
+        console.error(`Error processing content ${contentItem.title}:`, error);
         continue;
       }
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: 'Content collection completed' }),
+      JSON.stringify({ 
+        success: true, 
+        message: 'Content collection completed',
+        content_added: contentAdded,
+        content_skipped: contentSkipped,
+        total_processed: sampleContent.length
+      }),
       {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
