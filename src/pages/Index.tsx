@@ -10,6 +10,8 @@ import { Search, Plus, Filter, Zap, Target, Clock, Users } from "lucide-react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import NewsletterManagement from "@/components/NewsletterManagement";
+import TopicSelector from "@/components/TopicSelector";
 
 const Index = () => {
   const { user } = useAuth();
@@ -55,6 +57,21 @@ const Index = () => {
       setIsSubmitting(false);
     }
   };
+
+  // If user is authenticated, show the newsletter management interface
+  if (user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="space-y-8">
+            <NewsletterManagement />
+            <TopicSelector />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
