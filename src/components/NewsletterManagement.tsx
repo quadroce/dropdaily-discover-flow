@@ -11,6 +11,7 @@ const NewsletterManagement = () => {
   const { user } = useAuth();
   const [isCollecting, setIsCollecting] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
 
   const handleCollectContent = async () => {
     if (!user) return;
@@ -49,6 +50,27 @@ const NewsletterManagement = () => {
       toast.error('Errore durante l\'invio della newsletter');
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleTestNewsletter = async () => {
+    if (!user) return;
+    
+    setIsTesting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('test-newsletter');
+      
+      if (error) {
+        throw error;
+      }
+      
+      console.log('Test newsletter results:', data);
+      toast.success('Test completato! Controlla la console per i dettagli.');
+    } catch (error) {
+      console.error('Errore nel test newsletter:', error);
+      toast.error('Errore durante il test newsletter');
+    } finally {
+      setIsTesting(false);
     }
   };
 
@@ -92,7 +114,7 @@ const NewsletterManagement = () => {
           </div>
 
           {/* Manual Controls */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -132,6 +154,28 @@ const NewsletterManagement = () => {
                   className="w-full"
                 >
                   {isSending ? 'Inviando...' : 'Invia Newsletter'}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-purple-500" />
+                  Test Newsletter
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Testa il sistema e visualizza i log di debug
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  onClick={handleTestNewsletter}
+                  disabled={isTesting}
+                  className="w-full"
+                  variant="secondary"
+                >
+                  {isTesting ? 'Testando...' : 'Avvia Test'}
                 </Button>
               </CardContent>
             </Card>
