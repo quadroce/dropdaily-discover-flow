@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Clock, Zap, Settings } from 'lucide-react';
+import { Mail, Clock, Zap, Settings, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -12,22 +12,25 @@ const NewsletterManagement = () => {
   const [isCollecting, setIsCollecting] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const [systemStatus, setSystemStatus] = useState<any>(null);
 
   const handleCollectContent = async () => {
     if (!user) return;
     
     setIsCollecting(true);
     try {
-      const { error } = await supabase.functions.invoke('collect-content');
+      const { data, error } = await supabase.functions.invoke('collect-content');
       
       if (error) {
+        console.error('Collect content error:', error);
         throw error;
       }
       
+      console.log('Collect content response:', data);
       toast.success('Raccolta contenuti completata con successo!');
     } catch (error) {
       console.error('Errore nella raccolta contenuti:', error);
-      toast.error('Errore durante la raccolta contenuti');
+      toast.error(`Errore durante la raccolta contenuti: ${error.message}`);
     } finally {
       setIsCollecting(false);
     }
@@ -38,16 +41,18 @@ const NewsletterManagement = () => {
     
     setIsSending(true);
     try {
-      const { error } = await supabase.functions.invoke('send-newsletter');
+      const { data, error } = await supabase.functions.invoke('send-newsletter');
       
       if (error) {
+        console.error('Send newsletter error:', error);
         throw error;
       }
       
+      console.log('Send newsletter response:', data);
       toast.success('Newsletter inviata con successo!');
     } catch (error) {
       console.error('Errore nell\'invio newsletter:', error);
-      toast.error('Errore durante l\'invio della newsletter');
+      toast.error(`Errore durante l'invio della newsletter: ${error.message}`);
     } finally {
       setIsSending(false);
     }
@@ -61,14 +66,16 @@ const NewsletterManagement = () => {
       const { data, error } = await supabase.functions.invoke('test-newsletter');
       
       if (error) {
+        console.error('Test newsletter error:', error);
         throw error;
       }
       
       console.log('Test newsletter results:', data);
-      toast.success('Test completato! Controlla la console per i dettagli.');
+      setSystemStatus(data.summary);
+      toast.success('Test completato! Controlla i risultati qui sotto.');
     } catch (error) {
       console.error('Errore nel test newsletter:', error);
-      toast.error('Errore durante il test newsletter');
+      toast.error(`Errore durante il test newsletter: ${error.message}`);
     } finally {
       setIsTesting(false);
     }
@@ -162,7 +169,7 @@ const NewsletterManagement = () => {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Settings className="h-4 w-4 text-purple-500" />
-                  Test Newsletter
+                  Test Sistema
                 </CardTitle>
                 <CardDescription className="text-sm">
                   Testa il sistema e visualizza i log di debug
@@ -180,6 +187,73 @@ const NewsletterManagement = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* System Status */}
+          {systemStatus && (
+            <Card className="border-l-4 border-l-blue-500">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Stato del Sistema
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">{systemStatus.users_count}</div>
+                    <div className="text-sm text-muted-foreground">Utenti</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">{systemStatus.content_count}</div>
+                    <div className="text-sm text-muted-foreground">Contenuti Recenti</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">{systemStatus.content_topics_count}</div>
+                    <div className="text-sm text-muted-foreground">Mappature Argomenti</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      {systemStatus.api_keys?.resend ? (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <AlertCircle className="h-5 w-5 text-red-500" />
+                      )}
+                      {systemStatus.api_keys?.firecrawl ? (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <AlertCircle className="h-5 w-5 text-red-500" />
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground">API Keys</div>
+                  </div>
+                </div>
+                
+                {systemStatus.users_count === 0 && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-yellow-600" />
+                      <span className="font-medium text-yellow-800">Nessun utente trovato</span>
+                    </div>
+                    <p className="text-sm text-yellow-700 mt-1">
+                      Assicurati che ci siano utenti registrati con preferenze configurate.
+                    </p>
+                  </div>
+                )}
+                
+                {systemStatus.content_count === 0 && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-orange-600" />
+                      <span className="font-medium text-orange-800">Nessun contenuto recente</span>
+                    </div>
+                    <p className="text-sm text-orange-700 mt-1">
+                      Prova ad eseguire la raccolta contenuti per popolare il database.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Feature Overview */}
           <div className="border-t pt-6">

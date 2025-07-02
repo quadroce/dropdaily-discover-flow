@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/Header";
@@ -12,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import NewsletterManagement from "@/components/NewsletterManagement";
 import TopicSelector from "@/components/TopicSelector";
+import SystemDiagnostics from "@/components/SystemDiagnostics";
 
 const Index = () => {
   const { user } = useAuth();
@@ -65,6 +65,7 @@ const Index = () => {
         <Header />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="space-y-8">
+            <SystemDiagnostics />
             <NewsletterManagement />
             <TopicSelector />
           </div>
@@ -81,11 +82,12 @@ const Index = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            Your Daily Dose of
-            <span className="text-blue-600"> Curated Content</span>
+            Stop searching.
+            <span className="text-blue-600"> Start discovering.</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Stop scrolling endlessly. Get personalized content recommendations delivered daily - articles, videos, discussions, and more, all tailored to your interests.
+            AI-powered content discovery that delivers curated articles, videos, and posts directly to you. 
+            Join the waitlist for personalized daily drops.
           </p>
           
           {!user && (
@@ -111,131 +113,167 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Features Section */}
+      {/* How It Works Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Why Choose DropDaily?
+            How DropDaily Works
           </h2>
           <p className="text-xl text-gray-600">
-            Cut through the noise with AI-powered content curation
+            Three simple steps to personalized content discovery
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {[
-            {
-              icon: <Zap className="h-8 w-8 text-blue-600" />,
-              title: "AI-Powered",
-              description: "Smart algorithms learn your preferences and deliver content you'll actually want to read."
-            },
-            {
-              icon: <Target className="h-8 w-8 text-green-600" />,
-              title: "Personalized",
-              description: "Every recommendation is tailored to your interests, industry, and reading habits."
-            },
-            {
-              icon: <Clock className="h-8 w-8 text-purple-600" />,
-              title: "Time-Saving",
-              description: "Spend minutes, not hours, staying informed with our curated daily digest."
-            },
-            {
-              icon: <Users className="h-8 w-8 text-red-600" />,
-              title: "Community",
-              description: "Discover trending topics and discussions from your professional network."
-            }
-          ].map((feature, index) => (
-            <Card key={index} className="p-6 text-center hover:shadow-lg transition-shadow">
-              <div className="flex justify-center mb-4">
-                {feature.icon}
-              </div>
-              <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-              <p className="text-gray-600">{feature.description}</p>
-            </Card>
-          ))}
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="text-center">
+            <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl font-bold text-blue-600">1</span>
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Select Your Interests</h3>
+            <p className="text-gray-600">Choose up to 25 topics that matter to you - from tech and sports to culture and finance.</p>
+          </div>
+          <div className="text-center">
+            <div className="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl font-bold text-green-600">2</span>
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Choose Formats</h3>
+            <p className="text-gray-600">Pick your preferred content types: articles, videos, Reddit discussions, or social media posts.</p>
+          </div>
+          <div className="text-center">
+            <div className="bg-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl font-bold text-purple-600">3</span>
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Get Your Daily Drop</h3>
+            <p className="text-gray-600">Receive a personalized digest every morning with 5 carefully curated pieces of content.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Features Section */}
+      <div className="bg-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Why Choose DropDaily?
+            </h2>
+            <p className="text-xl text-gray-600">
+              Cut through the noise with AI-powered content curation
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              {
+                icon: <Zap className="h-8 w-8 text-blue-600" />,
+                title: "AI-Powered",
+                description: "Smart algorithms learn your preferences and deliver content you'll actually want to read."
+              },
+              {
+                icon: <Target className="h-8 w-8 text-green-600" />,
+                title: "Personalized",
+                description: "Every recommendation is tailored to your interests, industry, and reading habits."
+              },
+              {
+                icon: <Clock className="h-8 w-8 text-purple-600" />,
+                title: "Time-Saving",
+                description: "Spend minutes, not hours, staying informed with our curated daily digest."
+              },
+              {
+                icon: <Users className="h-8 w-8 text-red-600" />,
+                title: "Community",
+                description: "Discover trending topics and discussions from your professional network."
+              }
+            ].map((feature, index) => (
+              <Card key={index} className="p-6 text-center hover:shadow-lg transition-shadow">
+                <div className="flex justify-center mb-4">
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                <p className="text-gray-600">{feature.description}</p>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Sample Content Preview */}
-      <div className="bg-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Sample Daily Digest
-            </h2>
-            <p className="text-xl text-gray-600">
-              Here's what your personalized content feed might look like
-            </p>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Sample Daily Digest
+          </h2>
+          <p className="text-xl text-gray-600">
+            Here's what your personalized content feed might look like
+          </p>
+        </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { 
-                type: "Discussion", 
-                title: "What can I expect moving to Milan as a guy in my mid-20s?", 
-                source: "Reddit - r/milano", 
-                time: "8 min read",
-                url: "https://www.reddit.com/r/milano/comments/1llpits/what_can_i_expect_moving_to_milan_as_a_guy_in_my/"
-              },
-              { 
-                type: "Article", 
-                title: "Cambiare settore? No grazie", 
-                source: "LinkedIn News", 
-                time: "5 min read",
-                url: "https://www.linkedin.com/news/story/cambiare-settore-no-grazie-6448388/"
-              },
-              { 
-                type: "Social", 
-                title: "Instagram Post", 
-                source: "Instagram", 
-                time: "1 min view",
-                url: "https://www.instagram.com/p/DIJpxL9oRE3/?img_index=1"
-              },
-              { 
-                type: "News", 
-                title: "Wimbledon: sorteggio Sinner debutta contro Nardi, nei quarti possibile derby con Musetti", 
-                source: "Gazzetta dello Sport", 
-                time: "4 min read",
-                url: "https://www.gazzetta.it/Tennis/atp/slam/wimbledon/27-06-2025/wimbledon-sorteggio-sinner-debutta-contro-nardi-nei-quarti-possibile-derby-con-musetti.shtml"
-              },
-              { 
-                type: "Tech", 
-                title: "This AI-powered startup studio plans to launch 100,000 companies a year. Really.", 
-                source: "TechCrunch", 
-                time: "6 min read",
-                url: "https://techcrunch.com/2025/06/26/this-ai-powered-startup-studio-plans-to-launch-100000-companies-a-year-really/"
-              },
-              { 
-                type: "Video", 
-                title: "Dan Pat Rugby Training", 
-                source: "YouTube", 
-                time: "12 min",
-                isVideo: true,
-                videoId: "UYKV0LXfj8k"
-              }
-            ].map((item, index) => (
-              <Card key={index} className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
-                <Badge className={`mb-3 ${
-                  item.type === 'Discussion' ? 'bg-orange-100 text-orange-800' :
-                  item.type === 'Article' ? 'bg-blue-100 text-blue-800' :
-                  item.type === 'Social' ? 'bg-pink-100 text-pink-800' :
-                  item.type === 'News' ? 'bg-green-100 text-green-800' :
-                  item.type === 'Tech' ? 'bg-purple-100 text-purple-800' :
-                  'bg-blue-100 text-blue-800'
-                }`}>{item.type}</Badge>
-                <h3 className="font-semibold mb-2 line-clamp-2">{item.title}</h3>
-                {item.isVideo && item.videoId ? (
-                  <div className="my-4">
-                    <YouTubeEmbed videoId={item.videoId} title={item.title} />
-                  </div>
-                ) : null}
-                <div className="flex justify-between items-center text-sm text-gray-500">
-                  <span>{item.source}</span>
-                  <span>{item.time}</span>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[
+            { 
+              type: "Discussion", 
+              title: "What can I expect moving to Milan as a guy in my mid-20s?", 
+              source: "Reddit - r/milano", 
+              time: "8 min read",
+              url: "https://www.reddit.com/r/milano/comments/1llpits/what_can_i_expect_moving_to_milan_as_a_guy_in_my/"
+            },
+            { 
+              type: "Article", 
+              title: "Cambiare settore? No grazie", 
+              source: "LinkedIn News", 
+              time: "5 min read",
+              url: "https://www.linkedin.com/news/story/cambiare-settore-no-grazie-6448388/"
+            },
+            { 
+              type: "Social", 
+              title: "Instagram Post", 
+              source: "Instagram", 
+              time: "1 min view",
+              url: "https://www.instagram.com/p/DIJpxL9oRE3/?img_index=1"
+            },
+            { 
+              type: "News", 
+              title: "Wimbledon: sorteggio Sinner debutta contro Nardi, nei quarti possibile derby con Musetti", 
+              source: "Gazzetta dello Sport", 
+              time: "4 min read",
+              url: "https://www.gazzetta.it/Tennis/atp/slam/wimbledon/27-06-2025/wimbledon-sorteggio-sinner-debutta-contro-nardi-nei-quarti-possibile-derby-con-musetti.shtml"
+            },
+            { 
+              type: "Tech", 
+              title: "This AI-powered startup studio plans to launch 100,000 companies a year. Really.", 
+              source: "TechCrunch", 
+              time: "6 min read",
+              url: "https://techcrunch.com/2025/06/26/this-ai-powered-startup-studio-plans-to-launch-100000-companies-a-year-really/"
+            },
+            { 
+              type: "Video", 
+              title: "Dan Pat Rugby Training", 
+              source: "YouTube", 
+              time: "12 min",
+              isVideo: true,
+              videoId: "UYKV0LXfj8k"
+            }
+          ].map((item, index) => (
+            <Card key={index} className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+              <Badge className={`mb-3 ${
+                item.type === 'Discussion' ? 'bg-orange-100 text-orange-800' :
+                item.type === 'Article' ? 'bg-blue-100 text-blue-800' :
+                item.type === 'Social' ? 'bg-pink-100 text-pink-800' :
+                item.type === 'News' ? 'bg-green-100 text-green-800' :
+                item.type === 'Tech' ? 'bg-purple-100 text-purple-800' :
+                'bg-blue-100 text-blue-800'
+              }`}>{item.type}</Badge>
+              <h3 className="font-semibold mb-2 line-clamp-2">{item.title}</h3>
+              {item.isVideo && item.videoId ? (
+                <div className="my-4">
+                  <YouTubeEmbed videoId={item.videoId} title={item.title} />
                 </div>
-              </Card>
-            ))}
-          </div>
+              ) : null}
+              <div className="flex justify-between items-center text-sm text-gray-500">
+                <span>{item.source}</span>
+                <span>{item.time}</span>
+              </div>
+            </Card>
+          ))}
         </div>
       </div>
 
