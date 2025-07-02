@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -106,10 +106,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         variant: "destructive",
       });
     } else {
-      toast({
-        title: "Sign up successful!",
-        description: "Please check your email to confirm your account.",
-      });
+      // Check if email confirmation is required
+      if (data.user && !data.session) {
+        toast({
+          title: "Check your email",
+          description: "Please check your email to confirm your account before signing in.",
+        });
+      } else if (data.session) {
+        toast({
+          title: "Account created successfully!",
+          description: "Welcome to DropDaily! You can now start customizing your preferences.",
+        });
+      }
     }
 
     return { error };
