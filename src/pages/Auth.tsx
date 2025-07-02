@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,9 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
   const { user, loading, signUp, signIn, resetPassword } = useAuth();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   
   // Form states
@@ -27,6 +28,17 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Client-side password validation
+    if (password.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password should be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     await signUp(email, password, firstName, lastName);
@@ -174,11 +186,17 @@ const Auth = () => {
                     <Input
                       id="signup-password"
                       type="password"
-                      placeholder="Create a password"
+                      placeholder="Create a password (min. 6 characters)"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      minLength={6}
                     />
+                    {password.length > 0 && password.length < 6 && (
+                      <p className="text-sm text-red-600">
+                        Password must be at least 6 characters long
+                      </p>
+                    )}
                   </div>
                   <Button 
                     type="submit" 
