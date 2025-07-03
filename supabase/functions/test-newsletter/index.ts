@@ -1,6 +1,40 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
+// Logger utility for edge functions
+const createEdgeLogger = (functionName: string, userId?: string) => {
+  const startTime = Date.now();
+  
+  const log = async (level: string, action: string, message: string, details?: any) => {
+    const executionTime = Date.now() - startTime;
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
+    try {
+      await supabaseClient.from('system_logs').insert({
+        user_id: userId || null,
+        action,
+        status: level,
+        message,
+        details: details || null,
+        function_name: functionName,
+        execution_time_ms: executionTime
+      });
+    } catch (error) {
+      console.error('Failed to write log:', error);
+    }
+  };
+
+  return {
+    success: (action: string, message: string, details?: any) => log('success', action, message, details),
+    error: (action: string, message: string, details?: any) => log('error', action, message, details),
+    warning: (action: string, message: string, details?: any) => log('warning', action, message, details),
+    info: (action: string, message: string, details?: any) => log('info', action, message, details)
+  };
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -11,12 +45,33 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Get user ID from request headers
+  const authHeader = req.headers.get('authorization');
+  let userId: string | undefined;
+  
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.replace('Bearer ', '');
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      const { data: { user } } = await supabaseClient.auth.getUser(token);
+      userId = user?.id;
+    } catch (error) {
+      console.error('Error getting user from token:', error);
+    }
+  }
+
+  const logger = createEdgeLogger('test-newsletter', userId);
+
   try {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    await logger.info('test_started', 'Avvio del test di newsletter');
     console.log('=== NEWSLETTER TEST DEBUG ===');
     
     // Test 1: Check if users exist
@@ -140,6 +195,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('=== TEST COMPLETED ===');
     console.log('Recommendations:', logData.recommendations);
 
+    await logger.success('test_completed', 'Test della newsletter completato con successo', logData);
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -153,6 +210,8 @@ const handler = async (req: Request): Promise<Response> => {
     );
   } catch (error) {
     console.error('Error in test-newsletter function:', error);
+    await logger.error('test_failed', `Errore durante il test: ${error.message}`, { error: error.toString() });
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       {

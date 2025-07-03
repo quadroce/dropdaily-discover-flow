@@ -2,6 +2,40 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 import { Resend } from 'https://esm.sh/resend@4.0.0';
 
+// Logger utility for edge functions
+const createEdgeLogger = (functionName: string, userId?: string) => {
+  const startTime = Date.now();
+  
+  const log = async (level: string, action: string, message: string, details?: any) => {
+    const executionTime = Date.now() - startTime;
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
+    try {
+      await supabaseClient.from('system_logs').insert({
+        user_id: userId || null,
+        action,
+        status: level,
+        message,
+        details: details || null,
+        function_name: functionName,
+        execution_time_ms: executionTime
+      });
+    } catch (error) {
+      console.error('Failed to write log:', error);
+    }
+  };
+
+  return {
+    success: (action: string, message: string, details?: any) => log('success', action, message, details),
+    error: (action: string, message: string, details?: any) => log('error', action, message, details),
+    warning: (action: string, message: string, details?: any) => log('warning', action, message, details),
+    info: (action: string, message: string, details?: any) => log('info', action, message, details)
+  };
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -11,6 +45,8 @@ const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const logger = createEdgeLogger('send-newsletter');
 
   try {
     const supabaseClient = createClient(
@@ -26,6 +62,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const resend = new Resend(resendApiKey);
 
+    await logger.info('newsletter_started', 'Avvio generazione newsletter');
     console.log('Starting newsletter generation...');
 
     // Get all users with preferences
@@ -44,8 +81,10 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log(`Found ${users?.length || 0} users`);
+    await logger.info('users_found', `Trovati ${users?.length || 0} utenti`, { userCount: users?.length || 0 });
 
     if (!users || users.length === 0) {
+      await logger.warning('no_users', 'Nessun utente trovato per l\'invio della newsletter');
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -171,13 +210,19 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
+    const result = {
+      users_processed: users.length,
+      emails_sent: emailsSent,
+      emails_skipped: emailsSkipped
+    };
+
+    await logger.success('newsletter_completed', 'Newsletter inviata con successo', result);
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Newsletter sending completed',
-        users_processed: users.length,
-        emails_sent: emailsSent,
-        emails_skipped: emailsSkipped
+        ...result
       }),
       {
         status: 200,
@@ -186,6 +231,8 @@ const handler = async (req: Request): Promise<Response> => {
     );
   } catch (error) {
     console.error('Error in send-newsletter function:', error);
+    await logger.error('newsletter_failed', `Errore durante l'invio: ${error.message}`, { error: error.toString() });
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       {

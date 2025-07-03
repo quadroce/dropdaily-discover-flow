@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, User, ArrowLeft, Settings, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SystemLogs from '@/components/SystemLogs';
 
 const Profile = () => {
   const { user, loading, signOut, updateProfile } = useAuth();
@@ -181,6 +182,11 @@ const Profile = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* System Logs Section */}
+        <div className="mt-8">
+          <SystemLogs />
+        </div>
       </div>
     </div>
   );

@@ -117,6 +117,42 @@ export type Database = {
         }
         Relationships: []
       }
+      system_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          execution_time_ms: number | null
+          function_name: string | null
+          id: string
+          message: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          execution_time_ms?: number | null
+          function_name?: string | null
+          id?: string
+          message: string
+          status: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          execution_time_ms?: number | null
+          function_name?: string | null
+          id?: string
+          message?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       topics: {
         Row: {
           category: string
