@@ -13,7 +13,7 @@ const createEdgeLogger = (functionName: string, userId?: string) => {
     );
     
     try {
-      await supabaseClient.from('system_logs').insert({
+      const { error } = await supabaseClient.from('system_logs').insert({
         user_id: userId || null,
         action,
         status: level,
@@ -22,6 +22,12 @@ const createEdgeLogger = (functionName: string, userId?: string) => {
         function_name: functionName,
         execution_time_ms: executionTime
       });
+      
+      if (error) {
+        console.error('Database log error:', error);
+      } else {
+        console.log(`Log written: ${level} - ${action} - ${message}`);
+      }
     } catch (error) {
       console.error('Failed to write log:', error);
     }
