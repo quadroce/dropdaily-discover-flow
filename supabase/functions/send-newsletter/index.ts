@@ -153,7 +153,7 @@ const handler = async (req: Request): Promise<Response> => {
           const noContentHtml = generateNoContentNewsletterHtml(user);
           
           const emailResponse = await resend.emails.send({
-            from: 'DropDaily <newsletter@resend.dev>',
+            from: 'DropDaily <onboarding@resend.dev>',
             to: [user.email],
             subject: `La tua newsletter DropDaily - ${new Date().toLocaleDateString('it-IT')}`,
             html: noContentHtml
@@ -189,7 +189,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         // Send email
         const emailResponse = await resend.emails.send({
-          from: 'DropDaily <newsletter@resend.dev>',
+          from: 'DropDaily <onboarding@resend.dev>',
           to: [user.email],
           subject: `La tua newsletter DropDaily - ${new Date().toLocaleDateString('it-IT')}`,
           html: newsletterHtml
