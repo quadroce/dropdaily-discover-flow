@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { usePublicProfile } from '@/hooks/usePublicProfile';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -16,87 +16,10 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Mock public profile data
-const mockPublicProfile = {
-  username: 'francesco',
-  displayName: 'Francesco Rossi',
-  tagline: "Here's what Francesco is discovering this week",
-  avatar: null,
-  joinedDate: '2024-01-01',
-  isPublic: true
-};
-
-// Mock public content
-const mockPublicContent = [
-  {
-    id: 1,
-    title: "The Future of AI in Content Creation",
-    excerpt: "How artificial intelligence is revolutionizing the way we create and consume digital content...",
-    source: "Medium",
-    image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=200&fit=crop",
-    url: "https://example.com/ai-content",
-    type: "article",
-    likedAt: "2024-01-15",
-    isLiked: true
-  },
-  {
-    id: 2,
-    title: "Building React Components Like a Pro",
-    excerpt: "Advanced patterns and best practices for creating reusable React components that scale...",
-    source: "YouTube",
-    image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=200&fit=crop",
-    url: "https://example.com/react-video",
-    type: "video",
-    savedAt: "2024-01-14",
-    isLiked: false
-  },
-  {
-    id: 3,
-    title: "The Hidden Psychology of UX Design",
-    excerpt: "Understanding cognitive biases and psychological principles that make interfaces more intuitive...",
-    source: "Design Blog",
-    image: "https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=400&h=200&fit=crop",
-    url: "https://example.com/ux-psychology",
-    type: "article",
-    likedAt: "2024-01-13",
-    isLiked: true
-  },
-  {
-    id: 4,
-    title: "Advanced TypeScript Patterns",
-    excerpt: "Mastering conditional types, mapped types, and template literal types...",
-    source: "Dev Blog",
-    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=200&fit=crop",
-    url: "https://example.com/typescript",
-    type: "article",
-    savedAt: "2024-01-12",
-    isLiked: false
-  }
-];
-
 const PublicProfile = () => {
   const { username } = useParams<{ username: string }>();
   const { toast } = useToast();
-  const [profile, setProfile] = useState(mockPublicProfile);
-  const [content, setContent] = useState(mockPublicContent);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Simulate API call to fetch public profile
-    const fetchPublicProfile = async () => {
-      try {
-        // In a real app, you'd fetch the profile data here
-        // const response = await supabase.from('profiles').select('*').eq('username', username).single();
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching public profile:', error);
-        setLoading(false);
-      }
-    };
-
-    fetchPublicProfile();
-  }, [username]);
+  const { profile, publicContent, isLoading, isPublic, error } = usePublicProfile(username || '');
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -108,7 +31,10 @@ const PublicProfile = () => {
 
   const handleShare = (platform: 'twitter' | 'linkedin') => {
     const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent(`Check out ${profile.displayName}'s curated content on DropDaily`);
+    const displayName = profile?.first_name && profile?.last_name 
+      ? `${profile.first_name} ${profile.last_name}` 
+      : profile?.email?.split('@')[0] || 'User';
+    const text = encodeURIComponent(`Check out ${displayName}'s curated content on DropDaily`);
     
     let shareUrl = '';
     if (platform === 'twitter') {
@@ -120,7 +46,7 @@ const PublicProfile = () => {
     window.open(shareUrl, '_blank', 'noopener,noreferrer');
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -131,7 +57,24 @@ const PublicProfile = () => {
     );
   }
 
-  if (!profile.isPublic) {
+  if (error || !profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center max-w-md">
+          <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Profile Not Found</h1>
+          <p className="text-muted-foreground mb-6">
+            The profile you're looking for doesn't exist or is no longer available.
+          </p>
+          <Button asChild>
+            <a href="/">Back to DropDaily</a>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isPublic) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center max-w-md">
@@ -148,14 +91,15 @@ const PublicProfile = () => {
     );
   }
 
-  const initials = profile.displayName
+  const displayName = profile.first_name && profile.last_name 
+    ? `${profile.first_name} ${profile.last_name}` 
+    : profile.email?.split('@')[0] || 'User';
+
+  const initials = displayName
     .split(' ')
     .map(name => name[0])
     .join('')
     .toUpperCase();
-
-  const likedContent = content.filter(item => item.isLiked);
-  const savedContent = content.filter(item => !item.isLiked);
 
   return (
     <div className="min-h-screen bg-background">
@@ -186,69 +130,65 @@ const PublicProfile = () => {
         {/* Profile Header */}
         <div className="text-center mb-12">
           <Avatar className="w-24 h-24 mx-auto mb-4">
-            <AvatarImage src={profile.avatar || undefined} alt={profile.displayName} />
+            <AvatarImage src={profile.avatar_url || undefined} alt={displayName} />
             <AvatarFallback className="text-2xl font-semibold">
               {initials}
             </AvatarFallback>
           </Avatar>
           
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            {profile.displayName}
+            {displayName}
           </h1>
           
           <p className="text-lg text-muted-foreground mb-4">
-            {profile.tagline}
+            Here's what {displayName.split(' ')[0]} is discovering this week
           </p>
           
           <div className="flex justify-center items-center gap-6 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Share className="h-4 w-4" />
-              <span>@{profile.username}</span>
+              <span>@{username}</span>
             </div>
             <div className="flex items-center gap-2">
               <User className="h-4 w-4" />
-              <span>Joined {new Date(profile.joinedDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+              <span>Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
             </div>
           </div>
         </div>
 
         {/* Content Sections */}
         <div className="space-y-12">
-          {/* Recently Liked */}
-          {likedContent.length > 0 && (
-            <section>
-              <h2 className="text-2xl font-semibold text-foreground mb-6 flex items-center gap-2">
-                <Heart className="h-5 w-5 text-red-500" />
-                Recently Liked
-              </h2>
-              
+          {/* Recent Content */}
+          <section>
+            <h2 className="text-2xl font-semibold text-foreground mb-6 flex items-center gap-2">
+              <Heart className="h-5 w-5 text-red-500" />
+              Recent Discoveries
+            </h2>
+            
+            {publicContent.length > 0 ? (
               <div className="grid gap-6 md:grid-cols-2">
-                {likedContent.map((item) => (
+                {publicContent.map((item) => (
                   <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="aspect-video">
-                      <img 
-                        src={item.image} 
-                        alt={item.title}
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="aspect-video bg-muted flex items-center justify-center">
+                      <User className="h-12 w-12 text-muted-foreground" />
                     </div>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="secondary" className="text-xs">{item.source}</Badge>
-                        <Badge variant="outline" className="text-xs">{item.type}</Badge>
+                        <Badge variant="secondary" className="text-xs">{item.source || 'Unknown'}</Badge>
+                        <Badge variant="outline" className="text-xs">{item.content_type}</Badge>
                       </div>
                       <h3 className="font-semibold text-foreground mb-2 line-clamp-2">
                         {item.title}
                       </h3>
                       <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {item.excerpt}
+                        {item.description || 'No description available'}
                       </p>
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-muted-foreground">
-                          Liked {new Date(item.likedAt).toLocaleDateString()}
+                          {new Date(item.created_at).toLocaleDateString()}
                         </span>
                         <Button size="sm" variant="outline" asChild>
-                          <a href={item.url} target="_blank" rel="noopener noreferrer">
+                          <a href={item.url || '#'} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="h-4 w-4 mr-2" />
                             Read
                           </a>
@@ -258,62 +198,22 @@ const PublicProfile = () => {
                   </Card>
                 ))}
               </div>
-            </section>
-          )}
-
-          {/* Recently Saved */}
-          {savedContent.length > 0 && (
-            <section>
-              <h2 className="text-2xl font-semibold text-foreground mb-6 flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                Recently Saved
-              </h2>
-              
-              <div className="grid gap-4">
-                {savedContent.map((item) => (
-                  <Card key={item.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex gap-4">
-                        <img 
-                          src={item.image} 
-                          alt={item.title}
-                          className="w-24 h-16 object-cover rounded flex-shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="secondary" className="text-xs">{item.source}</Badge>
-                            <Badge variant="outline" className="text-xs">{item.type}</Badge>
-                          </div>
-                          <h3 className="font-medium text-foreground mb-1 line-clamp-1">
-                            {item.title}
-                          </h3>
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {item.excerpt}
-                          </p>
-                        </div>
-                        <div className="flex flex-col justify-between items-end">
-                          <Button size="sm" variant="outline" asChild>
-                            <a href={item.url} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="h-4 w-4" />
-                            </a>
-                          </Button>
-                          <span className="text-xs text-muted-foreground mt-2">
-                            {new Date(item.savedAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+            ) : (
+              <div className="text-center py-12">
+                <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No public content yet</h3>
+                <p className="text-muted-foreground">
+                  {displayName} hasn't shared any public content yet.
+                </p>
               </div>
-            </section>
-          )}
+            )}
+          </section>
         </div>
 
         {/* Footer */}
         <footer className="mt-16 pt-8 border-t text-center">
           <p className="text-muted-foreground mb-4">
-            Want to discover and curate content like {profile.displayName}?
+            Want to discover and curate content like {displayName}?
           </p>
           <Button asChild>
             <a href="/">Join DropDaily</a>

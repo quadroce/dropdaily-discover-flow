@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserContent } from '@/hooks/useUserContent';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,93 +22,16 @@ import {
   User
 } from 'lucide-react';
 
-// Mock data for today's drop
-const mockTodaysDrop = [
-  {
-    id: 1,
-    title: "The Future of AI in Content Creation",
-    excerpt: "How artificial intelligence is revolutionizing the way we create and consume digital content...",
-    source: "Medium",
-    image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=200&fit=crop",
-    url: "https://example.com/ai-content",
-    type: "article"
-  },
-  {
-    id: 2,
-    title: "Building React Components Like a Pro",
-    excerpt: "Advanced patterns and best practices for creating reusable React components that scale...",
-    source: "YouTube",
-    image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=200&fit=crop",
-    url: "https://example.com/react-video",
-    type: "video"
-  },
-  {
-    id: 3,
-    title: "The Hidden Psychology of UX Design",
-    excerpt: "Understanding cognitive biases and psychological principles that make interfaces more intuitive...",
-    source: "Design Blog",
-    image: "https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=400&h=200&fit=crop",
-    url: "https://example.com/ux-psychology",
-    type: "article"
-  },
-  {
-    id: 4,
-    title: "Web3 and the Decentralized Internet",
-    excerpt: "Exploring the potential of blockchain technology to reshape how we interact online...",
-    source: "Reddit",
-    image: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=400&h=200&fit=crop",
-    url: "https://example.com/web3-discussion",
-    type: "discussion"
-  },
-  {
-    id: 5,
-    title: "Sustainable Tech: Green Computing Trends",
-    excerpt: "How the tech industry is adapting to environmental challenges and reducing carbon footprint...",
-    source: "Tech News",
-    image: "https://images.unsplash.com/photo-1558618047-71c0c3d54a28?w=400&h=200&fit=crop",
-    url: "https://example.com/green-tech",
-    type: "news"
-  }
-];
-
-const mockSavedContent = [
-  {
-    id: 6,
-    title: "Advanced TypeScript Patterns",
-    excerpt: "Mastering conditional types, mapped types, and template literal types...",
-    source: "Dev Blog",
-    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=200&fit=crop",
-    url: "https://example.com/typescript",
-    type: "article",
-    savedAt: "2024-01-15"
-  },
-  {
-    id: 7,
-    title: "Design Systems Best Practices",
-    excerpt: "Creating scalable and maintainable design systems for large organizations...",
-    source: "Figma Blog",
-    image: "https://images.unsplash.com/photo-1558655146-d09347e92766?w=400&h=200&fit=crop",
-    url: "https://example.com/design-systems",
-    type: "article",
-    savedAt: "2024-01-14"
-  }
-];
-
-const mockLikedContent = [
-  {
-    id: 8,
-    title: "The Art of Code Reviews",
-    excerpt: "How to give and receive constructive feedback in software development teams...",
-    source: "Engineering Blog",
-    image: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=200&fit=crop",
-    url: "https://example.com/code-reviews",
-    type: "article",
-    likedAt: "2024-01-13"
-  }
-];
-
 const Profile = () => {
   const { user, loading, signOut } = useAuth();
+  const { 
+    todaysContent, 
+    savedContent, 
+    likedContent, 
+    userPreferences,
+    isLoading: contentLoading,
+    refetchContent 
+  } = useUserContent();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [exportModalOpen, setExportModalOpen] = useState(false);
@@ -146,11 +70,15 @@ const Profile = () => {
     setExportModalOpen(false);
   };
 
-  const handleContentAction = (action: string, contentId: number) => {
+  const handleContentAction = (action: string, contentId: string) => {
     console.log(`${action} on content ${contentId}`);
   };
 
-  if (loading) {
+  const handleRequestNewDrop = async () => {
+    await refetchContent();
+  };
+
+  if (loading || contentLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -207,37 +135,35 @@ const Profile = () => {
                   <RefreshCw className="h-5 w-5 text-primary" />
                   Today's Drop
                 </h2>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={handleRequestNewDrop}>
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Request New Drop
                 </Button>
               </div>
               
               <div className="grid gap-6">
-                {mockTodaysDrop.map((item) => (
+                {todaysContent.length > 0 ? todaysContent.map((item) => (
                   <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="md:flex">
                       <div className="md:w-48 md:flex-shrink-0">
-                        <img 
-                          src={item.image} 
-                          alt={item.title}
-                          className="w-full h-48 md:h-full object-cover"
-                        />
+                        <div className="w-full h-48 md:h-full bg-muted flex items-center justify-center">
+                          <User className="h-12 w-12 text-muted-foreground" />
+                        </div>
                       </div>
                       <div className="p-6 flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="secondary">{item.source}</Badge>
-                          <Badge variant="outline">{item.type}</Badge>
+                          <Badge variant="secondary">{item.source || 'Unknown'}</Badge>
+                          <Badge variant="outline">{item.content_type}</Badge>
                         </div>
                         <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-2">
                           {item.title}
                         </h3>
                         <p className="text-muted-foreground mb-4 line-clamp-2">
-                          {item.excerpt}
+                          {item.description || 'No description available'}
                         </p>
                         <div className="flex flex-wrap gap-2">
                           <Button size="sm" asChild>
-                            <a href={item.url} target="_blank" rel="noopener noreferrer">
+                            <a href={item.url || '#'} target="_blank" rel="noopener noreferrer">
                               <ExternalLink className="h-4 w-4 mr-2" />
                               Read
                             </a>
@@ -262,7 +188,21 @@ const Profile = () => {
                       </div>
                     </div>
                   </Card>
-                ))}
+                )) : (
+                  <div className="text-center py-12">
+                    <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">No content yet</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Set up your interests to get personalized content recommendations.
+                    </p>
+                    <Link to="/preferences">
+                      <Button>
+                        <Settings className="h-4 w-4 mr-2" />
+                        Set Up Interests
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -274,36 +214,41 @@ const Profile = () => {
               </h2>
               
               <div className="grid gap-4">
-                {mockSavedContent.map((item) => (
+                {savedContent.length > 0 ? savedContent.map((item) => (
                   <Card key={item.id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
                       <div className="flex gap-4">
-                        <img 
-                          src={item.image} 
-                          alt={item.title}
-                          className="w-24 h-16 object-cover rounded"
-                        />
+                        <div className="w-24 h-16 bg-muted rounded flex items-center justify-center">
+                          <User className="h-6 w-6 text-muted-foreground" />
+                        </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="secondary" className="text-xs">{item.source}</Badge>
-                            <span className="text-xs text-muted-foreground">Saved {item.savedAt}</span>
+                            <Badge variant="secondary" className="text-xs">{item.source || 'Unknown'}</Badge>
+                            <span className="text-xs text-muted-foreground">
+                              Saved {new Date(item.created_at).toLocaleDateString()}
+                            </span>
                           </div>
                           <h3 className="font-medium text-foreground mb-1 line-clamp-1">
                             {item.title}
                           </h3>
                           <p className="text-sm text-muted-foreground line-clamp-1">
-                            {item.excerpt}
+                            {item.description || 'No description available'}
                           </p>
                         </div>
                         <Button size="sm" variant="outline" asChild>
-                          <a href={item.url} target="_blank" rel="noopener noreferrer">
+                          <a href={item.url || '#'} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="h-4 w-4" />
                           </a>
                         </Button>
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                )) : (
+                  <div className="text-center py-8">
+                    <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No saved content yet</p>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -315,36 +260,41 @@ const Profile = () => {
               </h2>
               
               <div className="grid gap-4">
-                {mockLikedContent.map((item) => (
+                {likedContent.length > 0 ? likedContent.map((item) => (
                   <Card key={item.id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
                       <div className="flex gap-4">
-                        <img 
-                          src={item.image} 
-                          alt={item.title}
-                          className="w-24 h-16 object-cover rounded"
-                        />
+                        <div className="w-24 h-16 bg-muted rounded flex items-center justify-center">
+                          <User className="h-6 w-6 text-muted-foreground" />
+                        </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="secondary" className="text-xs">{item.source}</Badge>
-                            <span className="text-xs text-muted-foreground">Liked {item.likedAt}</span>
+                            <Badge variant="secondary" className="text-xs">{item.source || 'Unknown'}</Badge>
+                            <span className="text-xs text-muted-foreground">
+                              Liked {new Date(item.created_at).toLocaleDateString()}
+                            </span>
                           </div>
                           <h3 className="font-medium text-foreground mb-1 line-clamp-1">
                             {item.title}
                           </h3>
                           <p className="text-sm text-muted-foreground line-clamp-1">
-                            {item.excerpt}
+                            {item.description || 'No description available'}
                           </p>
                         </div>
                         <Button size="sm" variant="outline" asChild>
-                          <a href={item.url} target="_blank" rel="noopener noreferrer">
+                          <a href={item.url || '#'} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="h-4 w-4" />
                           </a>
                         </Button>
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                )) : (
+                  <div className="text-center py-8">
+                    <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No liked content yet</p>
+                  </div>
+                )}
               </div>
             </section>
           </div>
@@ -410,15 +360,19 @@ const Profile = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Today's Content</span>
-                      <span className="font-medium">{mockTodaysDrop.length}</span>
+                      <span className="font-medium">{todaysContent.length}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Saved Items</span>
-                      <span className="font-medium">{mockSavedContent.length}</span>
+                      <span className="font-medium">{savedContent.length}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Liked Items</span>
-                      <span className="font-medium">{mockLikedContent.length}</span>
+                      <span className="font-medium">{likedContent.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Your Interests</span>
+                      <span className="font-medium">{userPreferences?.length || 0}</span>
                     </div>
                   </div>
                 </CardContent>
