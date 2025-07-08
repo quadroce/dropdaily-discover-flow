@@ -162,7 +162,7 @@ const Profile = () => {
                           {item.description || 'No description available'}
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          <Button size="sm" asChild>
+                          <Button size="sm" asChild disabled={!item.url}>
                             <a href={item.url || '#'} target="_blank" rel="noopener noreferrer">
                               <ExternalLink className="h-4 w-4 mr-2" />
                               Read
@@ -235,9 +235,10 @@ const Profile = () => {
                             {item.description || 'No description available'}
                           </p>
                         </div>
-                        <Button size="sm" variant="outline" asChild>
+                        <Button size="sm" variant="outline" asChild disabled={!item.url}>
                           <a href={item.url || '#'} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-4 w-4" />
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Read
                           </a>
                         </Button>
                       </div>
@@ -281,9 +282,10 @@ const Profile = () => {
                             {item.description || 'No description available'}
                           </p>
                         </div>
-                        <Button size="sm" variant="outline" asChild>
+                        <Button size="sm" variant="outline" asChild disabled={!item.url}>
                           <a href={item.url || '#'} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-4 w-4" />
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Read
                           </a>
                         </Button>
                       </div>
